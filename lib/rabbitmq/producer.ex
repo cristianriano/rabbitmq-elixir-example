@@ -22,7 +22,8 @@ defmodule Rabbitmq.Producer do
   end
 
   def init(_) do
-    {:ok, conn} = Connection.open("amqp://admin:pass@localhost:5672/test")
+    config = read_config()
+    {:ok, conn} = Connection.open("amqp://#{config.user}:#{config.password}@#{config.host}:#{config.port}/#{config.vhost}")
     {:ok, chan} = Channel.open(conn)
     setup_queue(chan)
 
@@ -35,8 +36,8 @@ defmodule Rabbitmq.Producer do
   end
 
   def handle_cast({:publish, key, msg}, %{chan: chan} = state) do
-    Logger.debug("Publishing msg: `#{inspect(msg)}`")
-    Basic.publish(chan, @exchange, key, msg, [])
+    Logger.debug("Publishing msg: #{inspect(msg)}")
+    :ok = Basic.publish(chan, @exchange, key, msg, [])
     {:noreply, state}
   end
 
@@ -52,5 +53,15 @@ defmodule Rabbitmq.Producer do
                             )
     :ok = Exchange.topic(chan, @exchange, durable: true)
     :ok = Queue.bind(chan, @queue, @exchange, routing_key: @routing_key)
+  end
+
+  defp read_config() do
+    %{
+      host:     Application.fetch_env!(:rabbitmq, :host),
+      user:     Application.fetch_env!(:rabbitmq, :user),
+      password: Application.fetch_env!(:rabbitmq, :password),
+      port:     Application.fetch_env!(:rabbitmq, :port),
+      vhost:    Application.fetch_env!(:rabbitmq, :vhost),
+    }
   end
 end
