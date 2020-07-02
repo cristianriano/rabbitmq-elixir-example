@@ -10,13 +10,13 @@ defmodule Rabbitmq.Consumer do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
-        module: {BroadwayRabbitMQ.Producer,
-          queue: @queue,
-          qos: [
-            prefetch_count: 10,
-          ],
-          connection: config
-        },
+        module:
+          {BroadwayRabbitMQ.Producer,
+           queue: @queue,
+           qos: [
+             prefetch_count: 10
+           ],
+           connection: config},
         concurrency: 2
       ],
       processors: [

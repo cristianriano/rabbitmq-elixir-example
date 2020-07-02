@@ -37,14 +37,17 @@ defmodule Rabbitmq.Producer do
 
   defp setup_queue(chan) do
     {:ok, _} = Queue.declare(chan, @queue_error, durable: true)
+
     # Messages that cannot be delivered to any consumer in the main queue will be routed to the error queue
-    {:ok, _} = Queue.declare(chan, @queue,
-                             durable: true,
-                             arguments: [
-                               {"x-dead-letter-exchange", :longstr, ""},
-                               {"x-dead-letter-routing-key", :longstr, @queue_error}
-                             ]
-                            )
+    {:ok, _} =
+      Queue.declare(chan, @queue,
+        durable: true,
+        arguments: [
+          {"x-dead-letter-exchange", :longstr, ""},
+          {"x-dead-letter-routing-key", :longstr, @queue_error}
+        ]
+      )
+
     :ok = Exchange.topic(chan, @exchange, durable: true)
     :ok = Queue.bind(chan, @queue, @exchange, routing_key: @routing_key)
   end

@@ -15,11 +15,11 @@ defmodule Rabbitmq.Application do
 
   defp rabbitmq_config() do
     [
-      host:         Application.fetch_env!(:rabbitmq, :host),
-      username:     Application.fetch_env!(:rabbitmq, :user),
-      password:     Application.fetch_env!(:rabbitmq, :password),
-      port:         Application.fetch_env!(:rabbitmq, :port),
-      virtual_host: Application.fetch_env!(:rabbitmq, :vhost),
+      host: Application.fetch_env!(:rabbitmq, :host),
+      username: Application.fetch_env!(:rabbitmq, :user),
+      password: Application.fetch_env!(:rabbitmq, :password),
+      port: Application.fetch_env!(:rabbitmq, :port),
+      virtual_host: Application.fetch_env!(:rabbitmq, :vhost)
     ]
   end
 end

@@ -21,7 +21,7 @@ defmodule Rabbitmq.MixProject do
   defp deps do
     [
       {:amqp, "~> 1.5"},
-      {:broadway_rabbitmq, "~> 0.6"},
+      {:broadway_rabbitmq, "~> 0.6"}
     ]
   end
 end
