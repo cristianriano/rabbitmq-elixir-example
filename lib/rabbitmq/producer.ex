@@ -30,7 +30,7 @@ defmodule Rabbitmq.Producer do
   end
 
   def handle_cast({:publish, key, msg}, %{chan: chan} = state) do
-    Logger.debug("Publishing msg")
+    Logger.debug("Publishing...")
     :ok = Basic.publish(chan, @exchange, key, msg, [])
     {:noreply, state}
   end
