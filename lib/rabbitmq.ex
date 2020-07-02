@@ -1,18 +1,11 @@
 defmodule Rabbitmq do
   @moduledoc """
-  Documentation for `Rabbitmq`.
+  Test app to connect to RabbitMQ in Elixir
   """
 
-  @doc """
-  Hello world.
+  alias Rabbitmq.Producer
 
-  ## Examples
-
-      iex> Rabbitmq.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def publish(key, msg) do
+    Producer.publish(key, msg)
   end
 end
