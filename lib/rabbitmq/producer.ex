@@ -17,26 +17,20 @@ defmodule Rabbitmq.Producer do
     GenServer.cast(__MODULE__, {:publish, key, msg})
   end
 
-  def start_link(_args) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(config) do
+    GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def init(_) do
-    config = read_config()
-    {:ok, conn} = Connection.open("amqp://#{config.user}:#{config.password}@#{config.host}:#{config.port}/#{config.vhost}")
+  def init(config) do
+    {:ok, conn} = Connection.open(config)
     {:ok, chan} = Channel.open(conn)
     setup_queue(chan)
-
-    # Limit unacknowledged messages to 10
-    # :ok = Basic.qos(chan, prefetch_count: 10)
-    # Register the GenServer process as a consumer
-    # {:ok, _consumer_tag} = Basic.consume(chan, @queue)
 
     {:ok, %{chan: chan}}
   end
 
   def handle_cast({:publish, key, msg}, %{chan: chan} = state) do
-    Logger.debug("Publishing msg: #{inspect(msg)}")
+    Logger.debug("Publishing msg")
     :ok = Basic.publish(chan, @exchange, key, msg, [])
     {:noreply, state}
   end
@@ -53,15 +47,5 @@ defmodule Rabbitmq.Producer do
                             )
     :ok = Exchange.topic(chan, @exchange, durable: true)
     :ok = Queue.bind(chan, @queue, @exchange, routing_key: @routing_key)
-  end
-
-  defp read_config() do
-    %{
-      host:     Application.fetch_env!(:rabbitmq, :host),
-      user:     Application.fetch_env!(:rabbitmq, :user),
-      password: Application.fetch_env!(:rabbitmq, :password),
-      port:     Application.fetch_env!(:rabbitmq, :port),
-      vhost:    Application.fetch_env!(:rabbitmq, :vhost),
-    }
   end
 end
