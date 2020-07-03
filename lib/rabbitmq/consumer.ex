@@ -6,7 +6,7 @@ defmodule Rabbitmq.Consumer do
 
   @queue "test"
 
-  def start_link(config) do
+  def start_link(%{config: config, routing_keys: keys, error_queue: error_queue, exchange: exchange}) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
@@ -17,8 +17,16 @@ defmodule Rabbitmq.Consumer do
              prefetch_count: 10
            ],
            metadata: [:content_type],
+           declare: [
+             durable: true,
+             arguments: [
+              {"x-dead-letter-exchange", :longstr, ""},
+              {"x-dead-letter-routing-key", :longstr, error_queue}
+             ]
+           ],
+           bindings: Enum.map(keys, &{exchange, routing_key: &1}),
            connection: config},
-        concurrency: 2
+        concurrency: 1
       ],
       processors: [
         default: [

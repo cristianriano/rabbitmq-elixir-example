@@ -8,38 +8,34 @@ defmodule Rabbitmq.Producer do
 
   alias AMQP.{Basic, Channel, Exchange, Queue}
 
-  @queue "test"
-  @exchange "test"
-  @queue_error "#{@queue}_error"
-  @routing_key "order.*"
-
-  def publish(key, msg) do
-    GenServer.cast(__MODULE__, {:publish, key, msg})
+  def publish(topic, msg) do
+    GenServer.cast(__MODULE__, {:publish, topic, msg})
   end
 
-  def start_link(%{conn_module: _mod} = args) do
+  def start_link(%{conn_module: _, exchange: _, error_queue: _} = args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   @impl true
-  def init(%{conn_module: conn_module}) do
+  def init(%{conn_module: conn_module, exchange: exchange, error_queue: error_queue}) do
     {:ok, conn} = conn_module.get_connection()
     {:ok, chan} = Channel.open(conn)
-    setup_queue(chan)
+    setup_error_queue(chan, error_queue)
+    setup_exchange(chan, exchange)
 
     conn_module
     |> Process.whereis()
     |> Process.monitor()
 
-    {:ok, %{chan: chan}}
+    {:ok, %{chan: chan, exchange: exchange}}
   end
 
   @impl true
-  def handle_cast({:publish, key, msg}, %{chan: chan} = state) do
+  def handle_cast({:publish, topic, msg}, %{chan: chan, exchange: ex} = state) do
     Logger.debug("Publishing...")
 
     payload = encode(msg)
-    :ok = Basic.publish(chan, @exchange, key, payload,
+    :ok = Basic.publish(chan, ex, topic, payload,
       content_type: "application/x-msgpack"
     )
     {:noreply, state}
@@ -60,20 +56,11 @@ defmodule Rabbitmq.Producer do
     msg |> Msgpax.pack!(iodata: false)
   end
 
-  defp setup_queue(chan) do
-    {:ok, _} = Queue.declare(chan, @queue_error, durable: true)
+  defp setup_error_queue(chan, error_queue) do
+    {:ok, _} = Queue.declare(chan, error_queue, durable: true)
+  end
 
-    # Messages that cannot be delivered to any consumer in the main queue will be routed to the error queue
-    {:ok, _} =
-      Queue.declare(chan, @queue,
-        durable: true,
-        arguments: [
-          {"x-dead-letter-exchange", :longstr, ""},
-          {"x-dead-letter-routing-key", :longstr, @queue_error}
-        ]
-      )
-
-    :ok = Exchange.topic(chan, @exchange, durable: true)
-    :ok = Queue.bind(chan, @queue, @exchange, routing_key: @routing_key)
+  defp setup_exchange(chan, exchange) do
+    :ok = Exchange.topic(chan, exchange, durable: true)
   end
 end
