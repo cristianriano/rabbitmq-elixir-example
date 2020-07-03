@@ -16,6 +16,7 @@ defmodule Rabbitmq.Consumer do
            qos: [
              prefetch_count: 10
            ],
+           metadata: [:content_type],
            connection: config},
         concurrency: 2
       ],
@@ -28,8 +29,14 @@ defmodule Rabbitmq.Consumer do
   end
 
   @impl true
+  def handle_message(_processor, %Message{metadata: %{content_type: "application/x-msgpack"}} = message, _) do
+    data = Msgpax.unpack!(message.data)
+    Logger.debug("Message received: «#{inspect(data)}»")
+    message
+  end
+
   def handle_message(_processor, %Message{data: data} = message, _conext) do
-    Logger.debug("Message received #{inspect(data)}")
+    Logger.debug("Message received «#{inspect(data)}»")
     message
   end
 end

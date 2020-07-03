@@ -37,7 +37,11 @@ defmodule Rabbitmq.Producer do
   @impl true
   def handle_cast({:publish, key, msg}, %{chan: chan} = state) do
     Logger.debug("Publishing...")
-    :ok = Basic.publish(chan, @exchange, key, msg, [])
+
+    payload = encode(msg)
+    :ok = Basic.publish(chan, @exchange, key, payload,
+      content_type: "application/x-msgpack"
+    )
     {:noreply, state}
   end
 
@@ -50,6 +54,10 @@ defmodule Rabbitmq.Producer do
   def terminate(reason, %{chan: chan} = _state) do
     Logger.info("#{__MODULE__}: Closing RabbitMQ channel. #{inspect(reason)}")
     Channel.close(chan)
+  end
+
+  defp encode(msg) do
+    msg |> Msgpax.pack!(iodata: false)
   end
 
   defp setup_queue(chan) do
