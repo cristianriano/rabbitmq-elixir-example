@@ -6,3 +6,6 @@ config :rabbitmq,
   user: "admin",
   password: "pass",
   vhost: "test"
+
+# AMQP supervisors are too verbose
+config :logger, handle_otp_reports: false

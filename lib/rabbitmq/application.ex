@@ -5,7 +5,8 @@ defmodule Rabbitmq.Application do
 
   def start(_type, _args) do
     children = [
-      {Rabbitmq.Producer, rabbitmq_config()},
+      {Rabbitmq.Connection, rabbitmq_config()},
+      {Rabbitmq.Producer, %{conn_module: Rabbitmq.Connection}},
       {Rabbitmq.Consumer, rabbitmq_config()}
     ]
 

@@ -6,7 +6,7 @@ defmodule Rabbitmq.Producer do
   use GenServer
   require Logger
 
-  alias AMQP.{Basic, Channel, Connection, Exchange, Queue}
+  alias AMQP.{Basic, Channel, Exchange, Queue}
 
   @queue "test"
   @exchange "test"
@@ -17,22 +17,39 @@ defmodule Rabbitmq.Producer do
     GenServer.cast(__MODULE__, {:publish, key, msg})
   end
 
-  def start_link(config) do
-    GenServer.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(%{conn_module: _mod} = args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def init(config) do
-    {:ok, conn} = Connection.open(config)
+  @impl true
+  def init(%{conn_module: conn_module}) do
+    {:ok, conn} = conn_module.get_connection()
     {:ok, chan} = Channel.open(conn)
     setup_queue(chan)
+
+    conn_module
+    |> Process.whereis()
+    |> Process.monitor()
 
     {:ok, %{chan: chan}}
   end
 
+  @impl true
   def handle_cast({:publish, key, msg}, %{chan: chan} = state) do
     Logger.debug("Publishing...")
     :ok = Basic.publish(chan, @exchange, key, msg, [])
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
+    {:stop, {:connection_lost, reason}, state}
+  end
+
+  @impl true
+  def terminate(reason, %{chan: chan} = _state) do
+    Logger.info("#{__MODULE__}: Closing RabbitMQ channel. #{inspect(reason)}")
+    Channel.close(chan)
   end
 
   defp setup_queue(chan) do
