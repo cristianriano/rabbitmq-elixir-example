@@ -34,7 +34,8 @@ defmodule Rabbitmq.Application do
       username: Application.fetch_env!(:rabbitmq, :user),
       password: Application.fetch_env!(:rabbitmq, :password),
       port: Application.fetch_env!(:rabbitmq, :port),
-      virtual_host: Application.fetch_env!(:rabbitmq, :vhost)
+      virtual_host: Application.fetch_env!(:rabbitmq, :vhost),
+      heartbeat: Application.get_env(:rabbitmq, :heartbeat, 15)
     ]
   end
 end
