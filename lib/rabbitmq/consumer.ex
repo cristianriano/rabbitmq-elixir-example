@@ -6,7 +6,12 @@ defmodule Rabbitmq.Consumer do
 
   @queue "test"
 
-  def start_link(%{config: config, routing_keys: keys, error_queue: error_queue, exchange: exchange}) do
+  def start_link(%{
+        config: config,
+        routing_keys: keys,
+        error_queue: error_queue,
+        exchange: exchange
+      }) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
@@ -16,12 +21,12 @@ defmodule Rabbitmq.Consumer do
            qos: [
              prefetch_count: 10
            ],
-           metadata: [:content_type],
+           metadata: [:content_type, :routing_key],
            declare: [
              durable: true,
              arguments: [
-              {"x-dead-letter-exchange", :longstr, ""},
-              {"x-dead-letter-routing-key", :longstr, error_queue}
+               {"x-dead-letter-exchange", :longstr, ""},
+               {"x-dead-letter-routing-key", :longstr, error_queue}
              ]
            ],
            bindings: Enum.map(keys, &{exchange, routing_key: &1}),
@@ -37,14 +42,19 @@ defmodule Rabbitmq.Consumer do
   end
 
   @impl true
-  def handle_message(_processor, %Message{metadata: %{content_type: "application/x-msgpack"}} = message, _) do
+  def handle_message(
+        _processor,
+        %Message{metadata: %{content_type: "application/x-msgpack", routing_key: topic}} =
+          message,
+        _
+      ) do
     data = Msgpax.unpack!(message.data)
-    Logger.debug("Message received: «#{inspect(data)}»")
+    Logger.debug("Message with topic '#{topic}' received: «#{inspect(data)}»")
     message
   end
 
   def handle_message(_processor, %Message{data: data} = message, _conext) do
-    Logger.debug("Message received «#{inspect(data)}»")
+    Logger.debug("Message received: «#{inspect(data)}»")
     message
   end
 end

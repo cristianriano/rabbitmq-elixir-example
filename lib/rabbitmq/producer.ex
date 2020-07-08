@@ -35,9 +35,7 @@ defmodule Rabbitmq.Producer do
     Logger.debug("Publishing...")
 
     payload = encode(msg)
-    :ok = Basic.publish(chan, ex, topic, payload,
-      content_type: "application/x-msgpack"
-    )
+    :ok = Basic.publish(chan, ex, topic, payload, content_type: "application/x-msgpack")
     {:noreply, state}
   end
 

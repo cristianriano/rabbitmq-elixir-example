@@ -9,19 +9,19 @@ defmodule Rabbitmq.Application do
   def start(_type, _args) do
     children = [
       {Rabbitmq.Connection, rabbitmq_config()},
-      {Rabbitmq.Producer, %{
-        conn_module: Rabbitmq.Connection,
-        exchange: @exchange,
-        error_queue: @error_queue
-        }
-      },
-      {Rabbitmq.Consumer, %{
-        config: rabbitmq_config(),
-        routing_keys: ~w[order.* user.*],
-        error_queue: @error_queue,
-        exchange: @exchange
-        }
-      }
+      {Rabbitmq.Producer,
+       %{
+         conn_module: Rabbitmq.Connection,
+         exchange: @exchange,
+         error_queue: @error_queue
+       }},
+      {Rabbitmq.Consumer,
+       %{
+         config: rabbitmq_config(),
+         routing_keys: ~w[order.* user.*],
+         error_queue: @error_queue,
+         exchange: @exchange
+       }}
     ]
 
     opts = [strategy: :one_for_one, name: Rabbitmq.Supervisor]
