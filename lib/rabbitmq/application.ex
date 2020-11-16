@@ -3,8 +3,9 @@ defmodule Rabbitmq.Application do
 
   use Application
 
-  @exchange "test"
-  @error_queue "test_error"
+  @exchange "events"
+  @queue "test"
+  @error_queue "error_test"
 
   def start(_type, _args) do
     children = [
@@ -18,9 +19,10 @@ defmodule Rabbitmq.Application do
       {Rabbitmq.Consumer,
        %{
          config: rabbitmq_config(),
-         routing_keys: ~w[order.* user.*],
+         routing_keys: ~w[user.game_session.started],
          error_queue: @error_queue,
-         exchange: @exchange
+         exchange: @exchange,
+         queue: @queue
        }}
     ]
 

@@ -4,20 +4,19 @@ defmodule Rabbitmq.Consumer do
 
   alias Broadway.Message
 
-  @queue "test"
-
   def start_link(%{
         config: config,
         routing_keys: keys,
         error_queue: error_queue,
-        exchange: exchange
+        exchange: exchange,
+        queue: queue
       }) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
         module:
           {BroadwayRabbitMQ.Producer,
-           queue: @queue,
+           queue: queue,
            qos: [
              prefetch_count: 10
            ],
@@ -25,6 +24,7 @@ defmodule Rabbitmq.Consumer do
            declare: [
              durable: true,
              arguments: [
+               # Empty exchange means direct
                {"x-dead-letter-exchange", :longstr, ""},
                {"x-dead-letter-routing-key", :longstr, error_queue}
              ]
